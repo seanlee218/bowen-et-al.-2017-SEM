@@ -1,5 +1,5 @@
 ---
-title: 'Bowen et al. 2017 Progress Report #1 (STUCK)' 
+title: 'Bowen et al. 2017 Progress Report' 
 author: "Sean Lee"
 date: "10/3/2020"
 output: html_document
@@ -125,7 +125,7 @@ library(piecewiseSEM)
 library(car)
 
 ###### Load data
-source("./02_data_load_merge.R")
+
 exp_data_func <- as.data.frame(exp_data_func)
 
 ###some useful functions for piecewiseSEM use
@@ -229,4 +229,106 @@ std_ctab <- data.frame(std_ctab) %>%
   arrange(response, predictor)
 write.csv(std_ctab, "./sem_std_coefs.csv", row.names=FALSE)
 ```
+
+## Week 2
+
+To this point I have downloaded all the data and scripts from
+github and have ran through all of the "Function parsing and correlations" which broke down the data and created correlation maps of different biological processes and how they affect other biological processes.  These again are unrelated to the final SEM model I am interested in.
+
+## The problem
+
+The main problem I had last week was that all the previous scripts leading up the the SEM model were running perfectly, but when it came to the SEM model there was an error that popped up.  The error read: 
+
+Error in sem.fit(sem_mod_nlme, data = exp_data_func, corr.errors = c("belowbiomass_g~~abovebiomass_g",  : 
+  could not find function "sem.fit"
+  
+It seems as though the sem.fit function has since been replaced by a new function or somehow the syntax of the new version may be different.  Looking back to when the author originally used the "piecewiseSEM" package they were likely using version 1.x, and the current package my system has loaded in verion 2.1.0. 
+
+To find how the "piecewiseSEM" package has changed from verion 1.x to 2.1.0 I looked up "piecewiseSEM" on google to find a page from "The Comprehensize R Archive Network" (https://cran.r-project.org/web/packages/piecewiseSEM/vignettes/piecewiseSEM.html) which describes how to use the "piecewiseSEM" package.  
+
+In section 3.2 "Comparing versions in evaluating the Shipley’s SEM" the author describes that the old version of the package the model was run off of a constructed "list" of linear models.  For example from bowen et al. 2017:
+```{r}
+gen_div_status <- lme(observed_otus~  status, 
+                      random =~ 1|Genotype, data=exp_data_func, method="ML")
+  gen_activity_status <- lme(rd ~ status + observed_otus, 
+                           random =~ 1|Genotype, data=exp_data_func, method="ML")
+  gen_meta_status <- lme(`Metabolism`~ status+ observed_otus, 
+                       random =~ 1|Genotype, data=exp_data_func, method="ML")
+  phen_mod_status <- lme(belowgallic_uM ~ rd + observed_otus + Metabolism + status, 
+                       random =~ 1|Genotype, data=exp_data_func, method="ML")
+  c_mod_status <- lme(belowC ~ rd + observed_otus + Metabolism + status + belowgallic_uM     +
+                      belowbiomass_g + abovebiomass_g, 
+                    random =~ 1|Genotype, data=exp_data_func, method="ML")
+  n_mod_status <- lme(belowN ~ rd + observed_otus + Metabolism + status +
+                      belowbiomass_g + abovebiomass_g, 
+                    random =~ 1|Genotype, data=exp_data_func, method="ML")
+
+  biomass_mod_status <- lme(belowbiomass_g ~ rd + belowgallic_uM +  
+                            observed_otus + Metabolism + status, 
+                          random =~ 1|Genotype, data=exp_data_func, method="ML")
+  Abiomass_mod_status <- lme(abovebiomass_g ~ rd + belowgallic_uM + 
+                             observed_otus + Metabolism + status, 
+                           random =~ 1|Genotype, data=exp_data_func, method="ML")
+
+  sem_mod_nlme <- list(
+    gen_div_status,
+    gen_activity_status,
+    gen_meta_status,
+    phen_mod_status,
+    c_mod_status,
+    n_mod_status,
+    biomass_mod_status,
+    Abiomass_mod_status
+  
+    )
+```
+
+    
+This created a list of all the linear models fed into the SEM model called "sem_mod_nmle". 
+
+## Solving the problem from last week
+
+The new version of the the package omits the list and uses the "psem" function which converts the list into this "psem" object.  So I edited the chunk of code seed above to this new one:
+```{r}
+bowen.psem<-psem(lme(observed_otus~  status, 
+                                       random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(rd ~ status + observed_otus, 
+                                            random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(`Metabolism`~ status+ observed_otus, 
+                                        random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(belowgallic_uM ~ rd + observed_otus + Metabolism + status, 
+                                        random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(belowC ~ rd + observed_otus + Metabolism + status + belowgallic_uM +
+                                       belowbiomass_g + abovebiomass_g, 
+                                     random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(belowN ~ rd + observed_otus + Metabolism + status +
+                                       belowbiomass_g + abovebiomass_g, 
+                                     random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(belowbiomass_g ~ rd + belowgallic_uM +  
+                                             observed_otus + Metabolism + status, 
+                                           random =~ 1|Genotype, data=exp_data_func, method="ML"),
+                 lme(abovebiomass_g ~ rd + belowgallic_uM + 
+                                              observed_otus + Metabolism + status, 
+                                            random =~ 1|Genotype, data=exp_data_func, method="ML"))
+
+  (sem_mod_nlme <- summary(bowen.psem, .progressBar = F))
+  
+This summary gave me the SEM fit information":
+
+Structural Equation Model of bowen.psem 
+```
+
+ 
+##Getting the coefficients from the fit model
+
+The "sem.coefs" function used by Bowen et al. 2017 was also out of date so I checked the CRAN page to see what the new procedure was.  The new function is simply "coefs" and you plug your "psem" object right into it.  So I ran coefs(bowen.psem) and got:
+
+```{r}
+coefs(bowen.psem)
+```
+
+
+## Where I am now
+
+   There are correlation errors inputed into each of the sem.fit and sem.coef functions the author wrote, I did not integrate those into the new fit model or the coefficients I ran, how does that affect my model and how can I address that?
 
