@@ -93,9 +93,10 @@ write.csv(ph_comp_tab, "./post_hocs.csv", row.names=TRUE)
 #### Get coefficients, including categorical means
 sem_mod_coefs <- lapply(sem_mod_nlme, function(x) update(x, . ~ . - 1))
 
-ctab <- sem.coefs(sem_mod_coefs, data=exp_data_func, 
+ctab <- coefs(sem_mod_coefs, data=exp_data_func, 
                   corr.errors=c("belowbiomass_g~~abovebiomass_g", "belowN ~~ belowC"),
                   intercept=T)
+
 ctab <- data.frame(ctab) %>%
   arrange(response, predictor)
 write.csv(ctab, "./sem_coefs.csv", row.names=FALSE)

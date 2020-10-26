@@ -313,9 +313,6 @@ bowen.psem<-psem(lme(observed_otus~  status,
 
   (sem_mod_nlme <- summary(bowen.psem, .progressBar = F))
   
-This summary gave me the SEM fit information":
-
-Structural Equation Model of bowen.psem 
 ```
 
  
