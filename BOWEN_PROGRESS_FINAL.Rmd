@@ -1,18 +1,17 @@
 ---
-title: "Bowen et al. 2017 Progress Report"
+title: "Bowen et al. 2017 Final Report"
 author: "Sean Lee"
-date: "10/3/2020"
+date: "11/15/2020"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
-##Week 1
 
-##Data acquisition
+## Data acquisition
 
 My goal for this assignment was to create the Structural Equation Model (SEM) as shown in Bowen et al. 2017.  The first step in doing so would require me to get the raw data and code associated with creating this SEM.  Luckily for me, I found the a github link to the data and code imbedded in the methods section (https://github.com/jebyrnes/phrag_common_garden_sem).  
 
-##Function parsing & correlation
+## Function parsing & correlation
 
 After opening the link I found that it took me to a github page with a "data" folder and a "r" folder which held the code used.  I created a new project and created a data folder with all the github data in it so I could read it in later on.  I imported all the scripts which were seperated into 3 parts, part 1 included "function parsing" and "function correlation" scripts.  Function parse from what I can tell is cleaning up the data and seperating into new dataframes that will be used for downstream pathway analysis
 ```{r Function Parse, include=FALSE}
@@ -115,7 +114,7 @@ exp_data_func <- inner_join(exp_data, pathway_data_sum)
 
 ```
 
-##SEM
+## SEM
 
 The SEM model script will run until the sem.fit function at which time there is an error that indicates that that function doesn't exist.  I assume that it is an old function but I cannot find how to format the new function.
 
@@ -205,8 +204,6 @@ I found that it gave me this error:
     could not find function "sem.fit"
     
 At this point I needed to assess what I knew and how I would go about solving this issue.
-
-## Week 2
 
 To this point I have downloaded all the data and scripts from
 github and have ran through all of the "Function parsing and correlations" which broke down the data and created correlation maps of different biological processes and how they affect other biological processes.  These again are unrelated to the final SEM model I am interested in.
@@ -667,17 +664,18 @@ coefs(bowen.psem,intercepts = TRUE)
 
 ## Evaluate Chi Square tests of parameter significance
 
-```{r}
-sem.anova(sem_mod_nlme)
+```{r, error=TRUE}
+ANOVA_SEM<-sem.anova(sem_mod_nlme)
 
 ## creates CSV of chi square tests for parameter significance
-write.csv(sem.anova(sem_mod_nlme), "./sem_chisq.csv", row.names=FALSE)
+write.csv(ANOVA_SEM, "./sem_chisq.csv", row.names=FALSE)
 
 ##
 
 ph_tests <- lapply(sem_mod_nlme, status_lsmeans, adjust="none")
 ph_comp <- lapply(ph_tests, function(x) x[[2]])
 names(ph_comp) <- sapply(ph_tests, function(x) names(x)[1])
+
 ph_comp_tab <- do.call(rbind, lapply(ph_comp, function(x) as.data.frame(print(x))))
 write.csv(ph_comp_tab, "./post_hocs.csv", row.names=TRUE)
 ```
@@ -691,7 +689,13 @@ write.csv(ph_comp_tab, "./post_hocs.csv", row.names=TRUE)
 ## Conclusions
 
   This exercise in reproducibility within academic papers has shown me that even if the author provides have all the scripts and the data upon publishing the paper there could still be pitfalls with reproducibility.  Mainly, that the packages the author uses to perform certain analyses or construct certain figures are tied to the developer of that package.  If the developer decides to update the package at any given point the syntax, functions, and arguments could completely change.  Given that the paper I chose was only 3 years old and some of the code was already out of date this demonstrates that these packages are constantly being changed making the nature of reproducibility increasingly complicated as you would have to understand how to edit the old code to run with the updated package.
-  Overall I think that Bowen et al. 2017 did a better than average job when it comes to overall reproducibility, it was just the nature of R packages that ultimately gave me some problems
+  Overall I think that Bowen et al. 2017 did a better than average job when it comes to overall reproducibility, it was just the nature of R packages that ultimately gave me some problems.
+  
+## References
+
+Bowen, J. L., Kearns, P. J., Byrnes, J. E. K., Wigginton, S., Allen,     W. J., Greenwood, M., … Meyerson, L. A. (2017). Lineage              overwhelms environmental conditions in determining rhizosphere       bacterial community structure in a cosmopolitan invasive plant.      Nature Communications, 8(1), 433.
+
+Lefcheck, J. (2014, July 6). Piecewise structural equation modeling      in ecological research. Retrieved November 16, 2020, from            Sample(ECOLOGY) website:                                             https://jonlefcheck.net/2014/07/06/piecewise-structural-equation-     modeling-in-ecological-research/
 
 ```
    
